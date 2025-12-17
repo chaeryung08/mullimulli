@@ -1,99 +1,152 @@
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset-"UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> 빛의 굴절 시뮬레이션  </title>
-    <h2> 매질을 선택하세요 </h2>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <div class="button-container">
-      
-      <button class="dia-btn"> 다이아몬드 </button>
-      <button class="wat-btn"> 물 </button>
-      <button class="gla-btn"> 유리 </button>
-    </div>
-    <canvas id="canva"></canvas>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>빛의 굴절 시뮬레이션</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Malgun Gothic', sans-serif;
+    }
+    .button-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+    }
+    h2 {
+      color: black;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .medium-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      margin: 5px;
+      transition: all 0.3s ease;
+    }
+    .medium-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .medium-btn.active {
+      box-shadow: 0 0 0 3px #ff6b6b;
+      transform: scale(1.05);
+    }
+    .dia-btn {
+      background-color: #e0ffff;
+      color: #000000;
+    }
+    .wat-btn {
+      background-color: #4facfe;
+      color: #000000;
+    }
+    .gla-btn {
+      background-color: #fafad2;
+      color: #000000;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div class="button-container">
+    <h2>매질을 선택하세요</h2>
+    <button class="medium-btn dia-btn" onclick="changeMedium('dia')">다이아몬드</button>
+    <button class="medium-btn wat-btn active" onclick="changeMedium('wat')">물</button>
+    <button class="medium-btn gla-btn" onclick="changeMedium('gla')">유리</button>
+  </div>
+  <canvas id="canva"></canvas>
 
-    <!--자바스크립트코드시자규ㅠ-->
-    <script)
-      const canva = document.getElementById('canva');
-      const ctx=canva.getContext('2d');
-      canva.width = window.innerWidth;   // 너비 = 화면 너비
-      canva.height = window.innerHeight; //높이=화면높이
+  <script>
+    const canva = document.getElementById('canva');
+    const ctx = canva.getContext('2d');
+    canva.width = window.innerWidth;
+    canva.height = window.innerHeight;
 
-    // ===== 매질별 속성 정의 =====
-    // 각 매질의 굴절률,배경색 저장
+    // 매질별 속성 정의
     const mediums = {
       dia: { 
-        name: '다이아몬드',           // 매질 이름
-        refractiveIndex: 2.42,        // 굴절률 (빛이 꺾이는 정도)
-        color: '#e0ffff'              // 배경색 (연한 하늘색)
+        name: '다이아몬드',
+        refractiveIndex: 2.42,
+        color: '#e0ffff'
       },
       wat: { 
         name: '물', 
-        refractiveIndex: 1.33,        // 물의 굴절률
-        color: '#4facfe'              // 배경색 (하늘색)
+        refractiveIndex: 1.33,
+        color: '#4facfe'
       },
       gla: { 
         name: '유리', 
-        refractiveIndex: 1.52,        // 유리의 굴절률
-        color: '#fafad2'              // 배경색 (연두색)
+        refractiveIndex: 1.52,
+        color: '#fafad2'
       }
     };
 
-    let currentMedium = 'water';  // 현재 선택된 매질 
+    let currentMedium = 'wat';  // 초기값을 'wat'로 수정
 
-    // 매질변경
+    // 매질 변경 함수
     function changeMedium(medium) {
       currentMedium = medium;
       
-      // 모든 버튼에서 'active' 클래스 제거 (선택 표시 제거)
+      // 모든 버튼에서 active 클래스 제거
       document.querySelectorAll('.medium-btn').forEach(btn => {
         btn.classList.remove('active');
       });
       
-      // 클릭된 버튼에만 'active' 클래스 추가 (선택 표시)
+      // 클릭된 버튼에 active 클래스 추가
       event.target.classList.add('active');
       
       // 화면 다시 그리기
       draw();
     }
 
-    //화면그리기함수
+    // 화면 그리기 함수
     function draw() {
-      // 캔버스 전체를 지워서 초기화
+      // 캔버스 초기화
       ctx.clearRect(0, 0, canva.width, canva.height);
 
-      //화며ㅛㄴ2등분
+      // 화면 2등분
       const middleY = canva.height / 2;
 
-      //위는고익
-      ctx.fillStyle = '#ffffff';  // 흰색으로 설정
-      ctx.fillRect(0, 0, canva.width, middleY);  // 사각형 그리기 (x, y, 너비, 높이)
+      // 위쪽: 공기
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canva.width, middleY);
 
-      // ----- 아래쪽 절반: 선택된 매질 영역 그리기 -----
-      ctx.fillStyle = mediums[currentMedium].color;  // 매질의 색상으로 설정
-      ctx.fillRect(0, middleY, canva.width, canva.height - middleY);  // 사각형 그리기
+      // 아래쪽: 선택된 매질
+      ctx.fillStyle = mediums[currentMedium].color;
+      ctx.fillRect(0, middleY, canva.width, canva.height - middleY);
 
-      // ----- 경계선 그리기 (공기와 매질 사이) -----
-      ctx.strokeStyle = '#333';      // 검은색 선
-      ctx.lineWidth = 2;             // 선 두께 2px
-      ctx.setLineDash([10, 5]);      // 점선 패턴 (10px 그리고 5px 비우기)
-      ctx.beginPath();               // 새로운 경로 시작
-      ctx.moveTo(0, middleY);        // 시작점 (왼쪽 끝)
-      ctx.lineTo(canva.width, middleY);  // 끝점 (오른쪽 끝)
-      ctx.stroke();                  // 선 그리기
-      ctx.setLineDash([]);           // 점선 패턴 해제 (다시 실선으로)
+      // 경계선 그리기
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 5]);
+      ctx.beginPath();
+      ctx.moveTo(0, middleY);
+      ctx.lineTo(canva.width, middleY);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-      // ----- 매질 이름과 굴절률 표시 -----
-      ctx.fillStyle = '#333';        // 글자색 검은색
-      ctx.font = 'bold 24px Malgun Gothic';  // 글꼴 설정
+      // 매질 정보 표시
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 24px Malgun Gothic';
 
-      // 공기 정보 표시 (위쪽)
+      // 공기 정보
       ctx.fillText('공기 (n=1.00)', 20, middleY - 20);
       
-      // 선택된 매질 정보 표시 (아래쪽)
+      // 선택된 매질 정보
       ctx.fillText(
         `${mediums[currentMedium].name} (n=${mediums[currentMedium].refractiveIndex})`, 
         20, 
@@ -101,16 +154,15 @@
       );
     }
 
-    // ===== 화면 크기 변경 이벤트 =====
-    // 브라우저 창 크기가 바뀔 때마다 실행
+    // 화면 크기 변경 이벤트
     window.addEventListener('resize', () => {
-      canva.width = window.innerWidth;   // 캔버스 너비 재조정
-      canva.height = window.innerHeight; // 캔버스 높이 재조정
-      draw();  // 화면 다시 그리기
+      canva.width = window.innerWidth;
+      canva.height = window.innerHeight;
+      draw();
     });
 
-      draw();
-    </script>
-  </body>
+    // 초기 화면 그리기
+    draw();
+  </script>
+</body>
 </html>
-
