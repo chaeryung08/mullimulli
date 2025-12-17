@@ -4,7 +4,118 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>빛의 굴절 시뮬레이션</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      overflow: hidden;
+    }
+
+    #canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    .author {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      color: #333;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 8px 12px;
+      border-radius: 5px;
+      z-index: 10;
+    }
+
+    .button-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .button-container h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .medium-btn {
+      display: block;
+      width: 150px;
+      padding: 12px;
+      margin: 8px 0;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .medium-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .medium-btn.active {
+      border-color: #333;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .dia-btn {
+      background: linear-gradient(135deg, #e0ffff, #b0e0e6);
+    }
+
+    .wat-btn {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: white;
+    }
+
+    .gla-btn {
+      background: linear-gradient(135deg, #fafad2, #f0e68c);
+    }
+
+    .info-box {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+      min-width: 250px;
+    }
+
+    .info-box h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: #333;
+      border-bottom: 2px solid #333;
+      padding-bottom: 8px;
+    }
+
+    .info-box div {
+      margin: 8px 0;
+      font-size: 15px;
+      color: #555;
+    }
+
+    .info-box span {
+      font-weight: bold;
+      color: #000;
+    }
+  </style>
 </head>
 
 <body>
@@ -89,6 +200,21 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
+      // 법선 그리기
+      const normalX = canvas.width / 2;
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      ctx.beginPath();
+      ctx.moveTo(normalX, midY - 150);
+      ctx.lineTo(normalX, midY + 150);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#666';
+      ctx.font = '14px Malgun Gothic';
+      ctx.fillText('법선', normalX + 10, midY - 130);
+
       ctx.fillStyle = '#333';
       ctx.font = 'bold 18px Malgun Gothic';
       ctx.fillText('공기 (n=1.00)', 30, midY - 25);
@@ -98,7 +224,7 @@
         midY + 45
       );
 
-      if (mouseY < midY) {
+      if (mouseY < midY - 10) {
         drawRefraction(mouseX, mouseY, midY);
       } else {
         updateAngles(0, 0);
@@ -120,13 +246,22 @@
 
       const sin2 = (n1 / n2) * Math.sin(theta1);
 
+      // 입사광선
       drawRay(x, y, ix, iy, 'rgba(255,50,50,0.8)');
 
+      // 반사광선 (항상 표시)
+      const reflectLen = Math.min(iy, 300);
+      const reflectX = ix - dx * (reflectLen / dy);
+      const reflectY = iy - reflectLen;
+      drawRay(ix, iy, reflectX, reflectY, 'rgba(150,150,255,0.6)');
+
+      // 전반사 조건 확인
       if (sin2 > 1) {
         updateAngles(toDeg(theta1), '전반사');
         return;
       }
 
+      // 굴절광선
       const theta2 = Math.asin(sin2);
       const len = canvas.height - iy;
       const dir = dx > 0 ? 1 : -1;
@@ -152,8 +287,8 @@
 
     function drawLight(x, y) {
       const g = ctx.createRadialGradient(x, y, 0, x, y, 30);
-      g.addColorStop(0, 'rgba(255,255,120,1)');
-      g.addColorStop(1, 'rgba(255,200,0,0)');
+      g.addColorStop(0, 'rgba(255,80,80,1)');
+      g.addColorStop(1, 'rgba(255,50,50,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(x, y, 30, 0, Math.PI * 2);
