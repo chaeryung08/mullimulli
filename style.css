@@ -6,9 +6,8 @@ body {
 }
 
 .button-container {
-  position: absoulute;
+  position: absolute;
   top:20px;
-  left:20px;
   left:20px;
   z-index:10;
 }
@@ -37,7 +36,7 @@ h1 {
 
 /* 다이아몬드버튼 */
 
-.diam-btn {
+.dia-btn {
   background-color: #e0ffff;    
   color: #00000;              
 }
