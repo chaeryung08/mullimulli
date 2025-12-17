@@ -2,180 +2,125 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>빛의 굴절 시뮬레이션</title>
+  <title>빛의 굴절</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: 'Malgun Gothic', sans-serif;
-      overflow: hidden;
+      margin: 0;
+      font-family: Malgun Gothic, sans-serif;
     }
 
-    #canvas {
+    canvas {
       display: block;
-      cursor: crosshair;
+    }
+
+    .info {
+      position: absolute;
+      left: 20px;
+      bottom: 20px;
+      background: rgba(255,255,255,0.9);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .info h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+
+    .panel {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: rgba(255,255,255,0.9);
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .panel button {
+      width: 120px;
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px solid #aaa;
+      border-radius: 6px;
+      background-color: #eee;
+    }
+
+    .panel button.active {
+      border-color: #333;
+      font-weight: bold;
     }
 
     .author {
       position: absolute;
       top: 20px;
       left: 20px;
-      font-size: 14px;
-      color: #333;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 8px 12px;
+      font-size: 13px;
+      background: rgba(255,255,255,0.8);
+      padding: 6px 10px;
       border-radius: 5px;
-      z-index: 10;
-    }
-
-    .button-container {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      z-index: 10;
-    }
-
-    .button-container h2 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: #333;
-    }
-
-    .medium-btn {
-      display: block;
-      width: 150px;
-      padding: 12px;
-      margin: 8px 0;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .medium-btn:hover {
-      transform: scale(1.05);
-    }
-
-    .medium-btn.active {
-      border-color: #333;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    }
-
-    .dia-btn {
-      background: linear-gradient(135deg, #e0ffff, #b0e0e6);
-    }
-
-    .wat-btn {
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: white;
-    }
-
-    .gla-btn {
-      background: linear-gradient(135deg, #fafad2, #f0e68c);
-    }
-
-    .info-box {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      z-index: 10;
-      min-width: 250px;
-    }
-
-    .info-box h3 {
-      font-size: 18px;
-      margin-bottom: 12px;
-      color: #333;
-      border-bottom: 2px solid #333;
-      padding-bottom: 8px;
-    }
-
-    .info-box div {
-      margin: 8px 0;
-      font-size: 15px;
-      color: #555;
-    }
-
-    .info-box span {
-      font-weight: bold;
-      color: #000;
     }
   </style>
 </head>
 
 <body>
-  <p class="author">만든이 : 2514 윤채령, 2515 이유진</p>
 
-  <div class="button-container">
-    <h2>매질을 선택하세요</h2>
-    <button class="medium-btn dia-btn" data-medium="dia">다이아몬드</button>
-    <button class="medium-btn wat-btn active" data-medium="wat">물</button>
-    <button class="medium-btn gla-btn" data-medium="gla">유리</button>
+  <div class="author">제작: 2514 윤채령, 2515 이유진</div>
+
+  <div class="panel">
+    <div>매질 선택</div>
+    <button data-type="water" class="active">물</button>
+    <button data-type="glass">유리</button>
+    <button data-type="diamond">다이아몬드</button>
   </div>
 
-  <div class="info-box">
-    <h3>굴절 정보</h3>
-    <div>입사각: <span id="incidentAngle">0°</span></div>
-    <div>굴절각: <span id="refractedAngle">0°</span></div>
-    <div>공기 굴절률: <span>1.00</span></div>
-    <div>매질 굴절률: <span id="mediumIndex">1.33</span></div>
+  <div class="info">
+    <h3>각도 정보</h3>
+    <div>입사각: <span id="inAngle">0°</span></div>
+    <div>굴절각: <span id="reAngle">0°</span></div>
+    <div>공기 굴절률: 1.00</div>
+    <div>매질 굴절률: <span id="nValue">1.33</span></div>
   </div>
 
-  <canvas id="canvas"></canvas>
+  <canvas id="cv"></canvas>
 
   <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById("cv");
+    const ctx = canvas.getContext("2d");
 
-    function resize() {
+    function setSize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
-    resize();
-    window.addEventListener('resize', () => {
-      resize();
-      draw();
-    });
 
-    const media = {
-      dia: { name: '다이아몬드', n: 2.42, color: '#e0ffff' },
-      wat: { name: '물', n: 1.33, color: '#4facfe' },
-      gla: { name: '유리', n: 1.52, color: '#fafad2' }
+    setSize();
+    window.addEventListener("resize", setSize);
+
+    const mediumData = {
+      water: { n: 1.33, color: "#7ec8ff", name: "물" },
+      glass: { n: 1.52, color: "#f0e68c", name: "유리" },
+      diamond: { n: 2.42, color: "#dff", name: "다이아몬드" }
     };
 
-    let current = 'wat';
+    let currentMedium = "water";
     let mouseX = canvas.width / 2;
     let mouseY = 100;
 
-    document.querySelectorAll('.medium-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        current = btn.dataset.medium;
-
-        document.querySelectorAll('.medium-btn')
-          .forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        document.getElementById('mediumIndex').textContent = media[current].n;
+    document.querySelectorAll(".panel button").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".panel button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentMedium = btn.dataset.type;
+        document.getElementById("nValue").innerText = mediumData[currentMedium].n;
         draw();
-      });
+      };
     });
 
-    canvas.addEventListener('mousemove', e => {
+    canvas.addEventListener("mousemove", e => {
       mouseX = e.clientX;
       mouseY = e.clientY;
       draw();
@@ -183,100 +128,71 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const midY = canvas.height / 2;
 
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, midY);
+      const mid = canvas.height / 2;
 
-      ctx.fillStyle = media[current].color;
-      ctx.fillRect(0, midY, canvas.width, canvas.height - midY);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, mid);
 
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([12, 6]);
+      ctx.fillStyle = mediumData[currentMedium].color;
+      ctx.fillRect(0, mid, canvas.width, mid);
+
+      ctx.strokeStyle = "#333";
+      ctx.setLineDash([10, 6]);
       ctx.beginPath();
-      ctx.moveTo(0, midY);
-      ctx.lineTo(canvas.width, midY);
+      ctx.moveTo(0, mid);
+      ctx.lineTo(canvas.width, mid);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // 법선 그리기
-      const normalX = canvas.width / 2;
-      ctx.strokeStyle = '#666';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 4]);
       ctx.beginPath();
-      ctx.moveTo(normalX, midY - 150);
-      ctx.lineTo(normalX, midY + 150);
+      ctx.moveTo(canvas.width / 2, mid - 120);
+      ctx.lineTo(canvas.width / 2, mid + 120);
+      ctx.strokeStyle = "#666";
+      ctx.setLineDash([6, 4]);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = '#666';
-      ctx.font = '14px Malgun Gothic';
-      ctx.fillText('법선', normalX + 10, midY - 130);
-
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 18px Malgun Gothic';
-      ctx.fillText('공기 (n=1.00)', 30, midY - 25);
-      ctx.fillText(
-        `${media[current].name} (n=${media[current].n})`,
-        30,
-        midY + 45
-      );
-
-      if (mouseY < midY - 10) {
-        drawRefraction(mouseX, mouseY, midY);
+      if (mouseY < mid) {
+        calcRefraction(mouseX, mouseY, mid);
       } else {
-        updateAngles(0, 0);
+        updateText(0, 0);
       }
 
-      drawLight(mouseX, mouseY);
+      ctx.fillStyle = "#000";
+      ctx.fillText("공기", 20, mid - 20);
+      ctx.fillText(mediumData[currentMedium].name, 20, mid + 30);
     }
 
-    function drawRefraction(x, y, boundaryY) {
-      const ix = canvas.width / 2;
-      const iy = boundaryY;
+    function calcRefraction(x, y, baseY) {
+      const cx = canvas.width / 2;
+      const cy = baseY;
 
-      const dx = ix - x;
-      const dy = iy - y;
+      const dx = cx - x;
+      const dy = cy - y;
 
-      const theta1 = Math.atan2(Math.abs(dx), Math.abs(dy));
-      const n1 = 1.0;
-      const n2 = media[current].n;
+      const angle1 = Math.atan2(Math.abs(dx), Math.abs(dy));
+      const n1 = 1;
+      const n2 = mediumData[currentMedium].n;
 
-      const sin2 = (n1 / n2) * Math.sin(theta1);
+      const sinVal = (n1 / n2) * Math.sin(angle1);
 
-      // 입사광선
-      drawRay(x, y, ix, iy, 'rgba(255,50,50,0.8)');
+      drawLine(x, y, cx, cy, "red");
 
-      // 반사광선 (항상 표시)
-      const reflectLen = Math.min(iy, 300);
-      const reflectX = ix - dx * (reflectLen / dy);
-      const reflectY = iy - reflectLen;
-      drawRay(ix, iy, reflectX, reflectY, 'rgba(150,150,255,0.6)');
-
-      // 전반사 조건 확인
-      if (sin2 > 1) {
-        updateAngles(toDeg(theta1), '전반사');
+      if (sinVal > 1) {
+        updateText(radToDeg(angle1), "전반사");
         return;
       }
 
-      // 굴절광선
-      const theta2 = Math.asin(sin2);
-      const len = canvas.height - iy;
+      const angle2 = Math.asin(sinVal);
       const dir = dx > 0 ? 1 : -1;
 
-      ctx.strokeStyle = 'rgba(255,200,0,0.8)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(ix, iy);
-      ctx.lineTo(ix + len * Math.tan(theta2) * dir, canvas.height);
-      ctx.stroke();
+      drawLine(cx, cy, cx + dir * Math.tan(angle2) * 500, canvas.height, "orange");
 
-      updateAngles(toDeg(theta1), toDeg(theta2));
+      updateText(radToDeg(angle1), radToDeg(angle2));
     }
 
-    function drawRay(x1, y1, x2, y2, color) {
+    function drawLine(x1, y1, x2, y2, color) {
       ctx.strokeStyle = color;
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -285,25 +201,15 @@
       ctx.stroke();
     }
 
-    function drawLight(x, y) {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, 30);
-      g.addColorStop(0, 'rgba(255,80,80,1)');
-      g.addColorStop(1, 'rgba(255,50,50,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, 30, 0, Math.PI * 2);
-      ctx.fill();
+    function updateText(a, b) {
+      document.getElementById("inAngle").innerText =
+        typeof a === "number" ? a.toFixed(1) + "°" : a;
+      document.getElementById("reAngle").innerText =
+        typeof b === "number" ? b.toFixed(1) + "°" : b;
     }
 
-    function updateAngles(a1, a2) {
-      document.getElementById('incidentAngle').textContent =
-        typeof a1 === 'number' ? a1.toFixed(1) + '°' : a1;
-      document.getElementById('refractedAngle').textContent =
-        typeof a2 === 'number' ? a2.toFixed(1) + '°' : a2;
-    }
-
-    function toDeg(rad) {
-      return rad * 180 / Math.PI;
+    function radToDeg(r) {
+      return r * 180 / Math.PI;
     }
 
     draw();
