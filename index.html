@@ -1,167 +1,324 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <!-- 문자 인코딩 설정: 한글이 깨지지 않도록 UTF-8 사용 -->
   <meta charset="UTF-8">
+  
+  <!-- 반응형 웹을 위한 뷰포트 설정 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- 브라우저 탭에 표시될 제목 -->
   <title>빛의 굴절 시뮬레이션</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: 'Malgun Gothic', sans-serif;
-    }
-    .button-container {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 10;
-    }
-    h2 {
-      color: black;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .medium-btn {
-      display: inline-block;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      margin: 5px;
-      transition: all 0.3s ease;
-    }
-    .medium-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    .medium-btn.active {
-      box-shadow: 0 0 0 3px #ff6b6b;
-      transform: scale(1.05);
-    }
-    .dia-btn {
-      background-color: #e0ffff;
-      color: #000000;
-    }
-    .wat-btn {
-      background-color: #4facfe;
-      color: #000000;
-    }
-    .gla-btn {
-      background-color: #fafad2;
-      color: #000000;
-    }
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
+  
+  <!-- 외부 CSS 파일 연결 -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 매질 선택 버튼 컨테이너 -->
   <div class="button-container">
+    <!-- 제목 -->
     <h2>매질을 선택하세요</h2>
+    
+    <!-- 다이아몬드 선택 버튼 -->
     <button class="medium-btn dia-btn" onclick="changeMedium('dia')">다이아몬드</button>
+    
+    <!-- 물 선택 버튼 (기본 선택) -->
     <button class="medium-btn wat-btn active" onclick="changeMedium('wat')">물</button>
+    
+    <!-- 유리 선택 버튼 -->
     <button class="medium-btn gla-btn" onclick="changeMedium('gla')">유리</button>
   </div>
+
+  <!-- 굴절 정보를 표시하는 박스 (오른쪽 상단) -->
+  <div class="info-box">
+    <h3>📊 굴절 정보</h3>
+    
+    <!-- 입사각 표시 -->
+    <div class="info-item">입사각: <span class="info-value" id="incidentAngle">0°</span></div>
+    
+    <!-- 굴절각 표시 -->
+    <div class="info-item">굴절각: <span class="info-value" id="refractedAngle">0°</span></div>
+    
+    <!-- 공기의 굴절률 (고정값) -->
+    <div class="info-item">공기 굴절률: <span class="info-value">1.00</span></div>
+    
+    <!-- 현재 선택된 매질의 굴절률 -->
+    <div class="info-item">매질 굴절률: <span class="info-value" id="mediumIndex">1.33</span></div>
+  </div>
+
+  <!-- 그림을 그릴 캔버스 -->
   <canvas id="canva"></canvas>
 
+  <!-- 자바스크립트 코드 시작 -->
   <script>
+    // ===== 캔버스 초기 설정 =====
+    // 캔버스 요소 가져오기
     const canva = document.getElementById('canva');
+    
+    // 2D 그리기 컨텍스트 가져오기
     const ctx = canva.getContext('2d');
-    canva.width = window.innerWidth;
-    canva.height = window.innerHeight;
+    
+    // 캔버스 크기를 브라우저 창 크기에 맞추기
+    canva.width = window.innerWidth;   // 너비
+    canva.height = window.innerHeight; // 높이
 
-    // 매질별 속성 정의
+    // ===== 매질별 속성 정의 =====
     const mediums = {
+      // 다이아몬드 속성
       dia: { 
-        name: '다이아몬드',
-        refractiveIndex: 2.42,
-        color: '#e0ffff'
+        name: '다이아몬드',           // 매질 이름
+        refractiveIndex: 2.42,        // 굴절률 (빛이 얼마나 꺾이는지)
+        color: '#e0ffff'              // 배경색 (연한 청록색)
       },
+      // 물 속성
       wat: { 
         name: '물', 
-        refractiveIndex: 1.33,
-        color: '#4facfe'
+        refractiveIndex: 1.33,        // 물의 굴절률
+        color: '#4facfe'              // 배경색 (파란색)
       },
+      // 유리 속성
       gla: { 
         name: '유리', 
-        refractiveIndex: 1.52,
-        color: '#fafad2'
+        refractiveIndex: 1.52,        // 유리의 굴절률
+        color: '#fafad2'              // 배경색 (연한 노란색)
       }
     };
 
-    let currentMedium = 'wat';  // 초기값을 'wat'로 수정
+    // ===== 전역 변수 =====
+    let currentMedium = 'wat';        // 현재 선택된 매질 (기본값: 물)
+    let mouseX = canva.width / 2;     // 마우스 X 좌표 (초기값: 화면 중앙)
+    let mouseY = 100;                 // 마우스 Y 좌표 (초기값: 위쪽)
 
-    // 매질 변경 함수
+    // ===== 매질 변경 함수 =====
     function changeMedium(medium) {
+      // 선택된 매질로 변경
       currentMedium = medium;
       
-      // 모든 버튼에서 active 클래스 제거
+      // 모든 버튼에서 'active' 클래스 제거 (선택 표시 제거)
       document.querySelectorAll('.medium-btn').forEach(btn => {
         btn.classList.remove('active');
       });
       
-      // 클릭된 버튼에 active 클래스 추가
+      // 클릭된 버튼에 'active' 클래스 추가 (선택 표시)
       event.target.classList.add('active');
+      
+      // 오른쪽 정보 박스의 굴절률 업데이트
+      document.getElementById('mediumIndex').textContent = mediums[medium].refractiveIndex;
       
       // 화면 다시 그리기
       draw();
     }
 
-    // 화면 그리기 함수
-    function draw() {
-      // 캔버스 초기화
-      ctx.clearRect(0, 0, canva.width, canva.height);
-
-      // 화면 2등분
-      const middleY = canva.height / 2;
-
-      // 위쪽: 공기
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canva.width, middleY);
-
-      // 아래쪽: 선택된 매질
-      ctx.fillStyle = mediums[currentMedium].color;
-      ctx.fillRect(0, middleY, canva.width, canva.height - middleY);
-
-      // 경계선 그리기
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([10, 5]);
-      ctx.beginPath();
-      ctx.moveTo(0, middleY);
-      ctx.lineTo(canva.width, middleY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // 매질 정보 표시
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 24px Malgun Gothic';
-
-      // 공기 정보
-      ctx.fillText('공기 (n=1.00)', 20, middleY - 20);
-      
-      // 선택된 매질 정보
-      ctx.fillText(
-        `${mediums[currentMedium].name} (n=${mediums[currentMedium].refractiveIndex})`, 
-        20, 
-        middleY + 40
-      );
-    }
-
-    // 화면 크기 변경 이벤트
-    window.addEventListener('resize', () => {
-      canva.width = window.innerWidth;
-      canva.height = window.innerHeight;
-      draw();
+    // ===== 마우스 움직임 감지 =====
+    // 마우스가 움직일 때마다 실행되는 이벤트 리스너
+    canva.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;  // 마우스 X 좌표 업데이트
+      mouseY = e.clientY;  // 마우스 Y 좌표 업데이트
+      draw();              // 화면 다시 그리기
     });
 
-    // 초기 화면 그리기
+    // ===== 메인 그리기 함수 =====
+    function draw() {
+      // 캔버스 전체를 지워서 초기화
+      ctx.clearRect(0, 0, canva.width, canva.height);
+
+      // 화면을 반으로 나누는 경계선 Y 좌표
+      const middleY = canva.height / 2;
+
+      // ----- 위쪽 절반: 공기 영역 그리기 -----
+      ctx.fillStyle = '#ffffff';  // 흰색
+      ctx.fillRect(0, 0, canva.width, middleY);
+
+      // ----- 아래쪽 절반: 매질 영역 그리기 -----
+      ctx.fillStyle = mediums[currentMedium].color;  // 선택된 매질의 색상
+      ctx.fillRect(0, middleY, canva.width, canva.height - middleY);
+
+      // ----- 경계선 그리기 -----
+      ctx.strokeStyle = '#333';      // 진한 회색
+      ctx.lineWidth = 3;             // 선 두께
+      ctx.setLineDash([15, 8]);      // 점선 패턴 (15px 그리고 8px 비우기)
+      ctx.beginPath();
+      ctx.moveTo(0, middleY);        // 시작점 (왼쪽 끝)
+      ctx.lineTo(canva.width, middleY);  // 끝점 (오른쪽 끝)
+      ctx.stroke();                  // 선 그리기
+      ctx.setLineDash([]);           // 점선 패턴 해제
+
+      // ----- 매질 정보 텍스트 표시 -----
+      ctx.fillStyle = '#333';        // 글자색
+      ctx.font = 'bold 20px Malgun Gothic';  // 글꼴
+      
+      // 공기 정보 (위쪽)
+      ctx.fillText('공기 (n=1.00)', 30, middleY - 30);
+      
+      // 매질 정보 (아래쪽)
+      ctx.fillText(
+        `${mediums[currentMedium].name} (n=${mediums[currentMedium].refractiveIndex})`, 
+        30, 
+        middleY + 50
+      );
+
+      // ----- 굴절 그리기 -----
+      // 마우스(광원)가 공기 영역에 있을 때만 굴절 그리기
+      if (mouseY < middleY) {
+        drawRefraction(mouseX, mouseY, middleY);
+      } else {
+        // 광원이 매질 안에 있으면 각도 정보 초기화
+        document.getElementById('incidentAngle').textContent = '0°';
+        document.getElementById('refractedAngle').textContent = '0°';
+      }
+
+      // ----- 광원(마우스 위치) 표시 -----
+      drawLightSource(mouseX, mouseY);
+    }
+
+    // ===== 굴절 계산 및 그리기 함수 =====
+    function drawRefraction(lightX, lightY, boundaryY) {
+      // 빛이 경계선과 만나는 점 (화면 중앙)
+      const intersectionX = canva.width / 2;
+      const intersectionY = boundaryY;
+
+      // ----- 입사 광선 계산 -----
+      // 광원에서 경계선 교점까지의 벡터
+      const dx1 = intersectionX - lightX;  // X 방향 거리
+      const dy1 = intersectionY - lightY;  // Y 방향 거리
+
+      // 입사각 계산 (법선과의 각도)
+      // Math.atan2: 두 점 사이의 각도를 라디안으로 반환
+      const incidentAngleRad = Math.atan2(Math.abs(dx1), Math.abs(dy1));
+      const incidentAngleDeg = (incidentAngleRad * 180 / Math.PI).toFixed(1);  // 도(°)로 변환
+
+      // ----- 스넬의 법칙을 이용한 굴절각 계산 -----
+      // 스넬의 법칙: n1 * sin(θ1) = n2 * sin(θ2)
+      const n1 = 1.0;  // 공기의 굴절률
+      const n2 = mediums[currentMedium].refractiveIndex;  // 매질의 굴절률
+      
+      // sin(굴절각) 계산
+      const sinRefracted = (n1 / n2) * Math.sin(incidentAngleRad);
+      
+      // 전반사 체크: sin 값이 1보다 크면 전반사 발생
+      if (sinRefracted > 1) {
+        // 전반사일 경우 입사 광선만 그리기
+        drawIncidentRay(lightX, lightY, intersectionX, intersectionY);
+        
+        // 정보 업데이트
+        document.getElementById('incidentAngle').textContent = incidentAngleDeg + '°';
+        document.getElementById('refractedAngle').textContent = '전반사';
+        return;
+      }
+
+      // 굴절각 계산 (라디안)
+      const refractedAngleRad = Math.asin(sinRefracted);
+      const refractedAngleDeg = (refractedAngleRad * 180 / Math.PI).toFixed(1);  // 도(°)로 변환
+
+      // ----- 굴절 광선의 끝점 계산 -----
+      // 굴절 광선이 화면 아래쪽으로 진행
+      const refractedLength = canva.height - intersectionY;  // 굴절 광선 길이
+      
+      // X 방향으로 얼마나 이동할지 계산
+      const refractedDx = refractedLength * Math.tan(refractedAngleRad) * (dx1 > 0 ? 1 : -1);
+      
+      // 굴절 광선의 끝점 좌표
+      const refractedEndX = intersectionX + refractedDx;
+      const refractedEndY = canva.height;
+
+      // ----- 입사 광선 그리기 -----
+      drawIncidentRay(lightX, lightY, intersectionX, intersectionY);
+
+      // ----- 굴절 광선 그리기 -----
+      ctx.strokeStyle = 'rgba(255, 200, 0, 0.8)';  // 주황색 (약간 투명)
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(intersectionX, intersectionY);    // 시작점 (경계선)
+      ctx.lineTo(refractedEndX, refractedEndY);    // 끝점
+      ctx.stroke();
+
+      // ----- 법선(수직선) 그리기 -----
+      // 경계선에 수직인 점선
+      ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';  // 회색 (반투명)
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);  // 점선 패턴
+      ctx.beginPath();
+      ctx.moveTo(intersectionX, intersectionY - 150);  // 위쪽으로
+      ctx.lineTo(intersectionX, intersectionY + 150);  // 아래쪽으로
+      ctx.stroke();
+      ctx.setLineDash([]);  // 점선 패턴 해제
+
+      // ----- 입사각 표시 (호) -----
+      ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';  // 빨간색
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      // 호 그리기: arc(중심X, 중심Y, 반지름, 시작각도, 끝각도)
+      const startAngle1 = -Math.PI / 2;  // 위쪽 (법선)
+      const endAngle1 = -Math.PI / 2 + incidentAngleRad * (dx1 > 0 ? 1 : -1);
+      ctx.arc(intersectionX, intersectionY, 40, startAngle1, endAngle1, dx1 < 0);
+      ctx.stroke();
+
+      // ----- 굴절각 표시 (호) -----
+      ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';  // 파란색
+      ctx.beginPath();
+      const startAngle2 = Math.PI / 2;  // 아래쪽 (법선)
+      const endAngle2 = Math.PI / 2 + refractedAngleRad * (dx1 > 0 ? 1 : -1);
+      ctx.arc(intersectionX, intersectionY, 50, startAngle2, endAngle2, dx1 < 0);
+      ctx.stroke();
+
+      // ----- 각도 텍스트 표시 -----
+      ctx.fillStyle = '#ff6b6b';  // 빨간색
+      ctx.font = 'bold 14px Malgun Gothic';
+      ctx.fillText(`θ₁=${incidentAngleDeg}°`, intersectionX + 50, intersectionY - 50);
+      
+      ctx.fillStyle = '#4facfe';  // 파란색
+      ctx.fillText(`θ₂=${refractedAngleDeg}°`, intersectionX + 60, intersectionY + 70);
+
+      // ----- 정보 박스 업데이트 -----
+      document.getElementById('incidentAngle').textContent = incidentAngleDeg + '°';
+      document.getElementById('refractedAngle').textContent = refractedAngleDeg + '°';
+    }
+
+    // ===== 입사 광선 그리기 함수 =====
+    function drawIncidentRay(startX, startY, endX, endY) {
+      ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';  // 빨간색
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);  // 광원
+      ctx.lineTo(endX, endY);      // 경계선 교점
+      ctx.stroke();
+    }
+
+    // ===== 광원(마우스) 그리기 함수 =====
+    function drawLightSource(x, y) {
+      // 빛나는 효과를 위한 그라데이션
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
+      gradient.addColorStop(0, 'rgba(255, 255, 100, 1)');    // 중심: 밝은 노란색
+      gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.6)');  // 중간: 주황색
+      gradient.addColorStop(1, 'rgba(255, 200, 0, 0)');      // 가장자리: 투명
+
+      // 빛 효과 그리기
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, 30, 0, Math.PI * 2);  // 원 그리기
+      ctx.fill();
+
+      // 광원 중심점 (작은 원)
+      ctx.fillStyle = '#ffff00';  // 노란색
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 광원 테두리
+      ctx.strokeStyle = '#ff9900';  // 주황색
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // ===== 화면 크기 변경 이벤트 =====
+    // 브라우저 창 크기가 변경될 때마다 실행
+    window.addEventListener('resize', () => {
+      canva.width = window.innerWidth;   // 너비 재조정
+      canva.height = window.innerHeight; // 높이 재조정
+      draw();  // 화면 다시 그리기
+    });
+
+    // ===== 초기 화면 그리기 =====
     draw();
   </script>
 </body>
